@@ -1,0 +1,36 @@
+[init]
+	defaultBranch = main
+[user]
+	name = TheresNoTime
+	email = sam@theresnotime.co.uk
+	signingkey = 2C15A644ABE9A27E
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+[core]
+	editor = nano
+	compression = 0
+	autocrlf = false
+	fscache = true
+	symlinks = true
+	fsmonitor = true
+	protectNTFS = false
+	excludesfile = ~/.gitignore
+[gitreview]
+	remote = origin
+	username = samtar
+[fetch]
+	pruneTags = true
+[commit]
+	gpgSign = false
+[pager]
+	branch = false
+
+[includeIf "hasconfig:remote.*.url:ssh://samtar@gerrit.wikimedia.org:29418/**"]
+    path = ~/.config/git/gerrit.wikimedia.inc
+[help]
+	autocorrect = 10
+[gpg]
+	program = gpg

@@ -4,6 +4,11 @@ intype=true
 splash=true
 vercheck=true
 beep=true
+theme=gruvbox
+statuses.console=none
+statuses.chat=none
+statuses.muc=none
+intype.console=true
 
 [logging]
 chlog=true
@@ -16,10 +21,13 @@ typing=true
 [connection]
 account=anoxinon
 carbons=true
+receipts.request=true
+receipts.send=true
 
 [omemo]
 policy=always
 log=on
+trustmode=blind
 
 [plugins]
 load=browser.py;presence_notify.py;sounds.py;
@@ -27,3 +35,10 @@ load=browser.py;presence_notify.py;sounds.py;
 [chatstates]
 outtype=true
 enabled=true
+
+[alias]
+away=/status set away
+back=/status set online
+
+[presence]
+lastactivity=true

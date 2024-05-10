@@ -1,3 +1,37 @@
 {
-    "profrc": "~/.config/profanity"
+    "dotfiles_run": {
+        "copy_from": "./dotfiles_run",
+        "copy_to": "~/dotfiles_run",
+        "path": "~",
+        "filename": "dotfiles_run",
+        "is_dir": false
+    },
+    "profanity": {
+        "copy_from": "./profanity",
+        "copy_to": "~/.config/profanity",
+        "path": "~/.config",
+        "filename": "profanity",
+        "is_dir": true
+    },
+    "git": {
+        "copy_from": "./git",
+        "copy_to": "~/.config/git",
+        "path": "~/.config",
+        "filename": "git",
+        "is_dir": true
+    },
+    "global.gitconfig": {
+        "copy_from": "./global.gitconfig",
+        "copy_to": "~/.gitconfig",
+        "path": "~",
+        "filename": ".gitconfig",
+        "is_dir": false
+    },
+    "global.gitignore": {
+        "copy_from": "./global.gitignore",
+        "copy_to": "~/.gitignore",
+        "path": "~",
+        "filename": ".gitignore",
+        "is_dir": false
+    }
 }
