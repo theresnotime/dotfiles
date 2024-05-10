@@ -3,8 +3,8 @@ import datetime
 import json
 import os
 import shutil
-import sys
-from termcolor import colored, cprint
+import time
+from termcolor import cprint
 
 
 class Dotfiles:
@@ -22,16 +22,50 @@ class Dotfiles:
 
 
 def do_copy(
-    source: str, destination: str, is_dir: bool = False, overwrite: bool = False
+    source: str,
+    destination: str,
+    is_dir: bool = False,
+    overwrite: bool = False,
+    skip_prompt: bool = False,
 ):
     if overwrite:
         if is_dir:
             if os.path.exists(destination):
-                shutil.rmtree(destination)
+                if skip_prompt:
+                    shutil.rmtree(destination)
+                else:
+                    # Warn the user and prompt
+                    if (
+                        prompt_user(
+                            f"[{source}]: {destination} already exists, do you want to overwrite it?"
+                        )
+                        is False
+                    ):
+                        log_to_console(
+                            "WARN",
+                            f"[{source}]: {destination} already exists, not copying",
+                        )
+                        return False
+                    shutil.rmtree(destination)
             shutil.copytree(source, destination)
         else:
             if os.path.exists(destination):
-                os.remove(destination)
+                if skip_prompt:
+                    os.remove(destination)
+                else:
+                    # Warn the user and prompt
+                    if (
+                        prompt_user(
+                            f"[{source}]: {destination} already exists, do you want to overwrite it?"
+                        )
+                        is False
+                    ):
+                        log_to_console(
+                            "WARN",
+                            f"[{source}]: {destination} already exists, not copying",
+                        )
+                        return False
+                    os.remove(destination)
             shutil.copy(source, destination)
 
         log_to_console("OKAY", f"[{source}]: Copied {source} to {destination}")
@@ -52,6 +86,14 @@ def do_copy(
             return True
 
 
+def prompt_user(message: str):
+    now = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    response = input(f"[{now}]: [QUES]: {message} (y/n): ")
+    if response.lower() == "y":
+        return True
+    return False
+
+
 def log_to_console(level: str, message: str):
     now = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     message = f"[{now}]: [{level}]: {message}"
@@ -70,11 +112,17 @@ def log_to_console(level: str, message: str):
 def do_upload(dotfile):
     update_from = dotfile.expanded_copy_to
     update_to = dotfile.copy_from
-    if dotfile.is_dir:
-        shutil.rmtree(update_to)
-        shutil.copytree(update_from, update_to)
+    if os.path.exists(update_from):
+        if dotfile.is_dir:
+            shutil.rmtree(update_to)
+            shutil.copytree(update_from, update_to)
+        else:
+            shutil.copy(update_from, update_to)
     else:
-        shutil.copy(update_from, update_to)
+        log_to_console(
+            "ERROR",
+            f"[{dotfile.copy_from}]: {dotfile.expanded_copy_to} does not exist",
+        )
 
 
 def handle_dotfiles_run(expanded_copy_to, copy_to, copy_from):
@@ -106,12 +154,25 @@ if __name__ == "__main__":
         action="store_true",
         help="Update repo with current dotfiles",
     )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Answer yes to all prompts",
+    )
 
     args = parser.parse_args()
 
     locations = open("locations.json")
 
     data = json.load(locations)
+
+    if args.yes:
+        log_to_console(
+            "WARN",
+            "Skipping prompts, you have 4s to cancel..",
+        )
+        time.sleep(4)
 
     for dotfile in data:
         file = Dotfiles(dotfile, data)
@@ -127,35 +188,30 @@ if __name__ == "__main__":
         if file.name == "dotfiles_run":
             handle_dotfiles_run(file.expanded_copy_to, file.copy_to, file.copy_from)
 
-        if file.path == "~":
+        if not os.path.exists(file.expanded_path):
+            log_to_console(
+                "INFO", f"[{file.copy_from}]: Create directory {file.expanded_path}"
+            )
+            os.makedirs(file.expanded_path)
+        else:
             log_to_console(
                 "INFO",
-                f"[{file.copy_from}]: File path is the root the current user's home directory",
+                f"[{file.copy_from}]: Directory {file.expanded_path} already exists",
             )
-        else:
-            if not os.path.exists(file.expanded_path):
-                log_to_console(
-                    "INFO", f"[{file.copy_from}]: Create directory {file.expanded_path}"
-                )
-            else:
-                log_to_console(
-                    "INFO",
-                    f"[{file.copy_from}]: Directory {file.expanded_path} already exists",
-                )
 
-        if file.name != file.filename:
+        if args.dry_run:
             log_to_console(
                 "INFO",
-                f"[{file.copy_from}]: Copy to {file.copy_to} (rename to {file.filename}) ({'directory' if file.is_dir else 'file'})",
+                f"[{file.copy_from}]: Dry run, skipping copy",
             )
-        else:
-            log_to_console(
-                "INFO",
-                f"[{file.copy_from}]: Copy to {file.copy_to} ({'directory' if file.is_dir else 'file'})",
-            )
+            continue
 
         do_copy(
-            file.copy_from, file.expanded_copy_to, is_dir=file.is_dir, overwrite=False
+            file.copy_from,
+            file.expanded_copy_to,
+            is_dir=file.is_dir,
+            overwrite=True,
+            skip_prompt=args.yes,
         )
 
     locations.close()
